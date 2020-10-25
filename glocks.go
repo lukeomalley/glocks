@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+
+	"github.com/lukeomalley/glocks/parsererror"
 )
 
 func main() {
@@ -24,18 +26,23 @@ func main() {
 }
 
 func runFile(file string) {
-	dat, err := ioutil.ReadFile(file)
+	src, err := ioutil.ReadFile(file)
 	check(err)
-	run(string(dat))
+	run(string(src))
+
+	if parsererror.HadError {
+		os.Exit(65)
+	}
 }
 
 func runPrompt() {
 	reader := bufio.NewReader(os.Stdin)
 	for {
 		fmt.Print("> ")
-		dat, err := reader.ReadBytes('\n')
+		src, err := reader.ReadBytes('\n')
 		check(err)
-		run(string(dat))
+		run(string(src))
+		parsererror.HadError = false
 	}
 }
 
@@ -47,4 +54,13 @@ func check(err error) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func handleError(line int, message string) {
+	report(line, "", message)
+}
+
+func report(line int, where string, message string) {
+	fmt.Println("[line " + string(line) + "] " + "Error " + where + ": " + message)
+	parsererror.HadError = true
 }
